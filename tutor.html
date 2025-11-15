@@ -128,155 +128,169 @@
         <div id="debug-log"></div>
     </div>
 
-    <script type="module">
-        import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.1';
-        env.allowRemoteModels = true;
+    <!-- *** START OF CHANGES *** -->
 
-        const status = document.getElementById('status');
-        const chatContainer = document.getElementById('chat-container');
-        const userInput = document.getElementById('user-input');
-        const sendBtn = document.getElementById('send-btn');
-        const aiModeCheckbox = document.getElementById('ai-mode-checkbox');
-        const debugPanel = document.getElementById('debug-panel');
-        const debugHeader = document.getElementById('debug-header');
-        const debugLog = document.getElementById('debug-log');
+    <!-- 1. Load the library using a classic script tag -->
+    <script src="https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.1"></script>
 
-        let tutorPipeline = null;
-        let studentDataContext = '';
-        let currentAiMode = 'tuteur'; // 'tuteur' or 'analyste'
+    <!-- 2. The main application logic in its own script tag -->
+    <script>
+        // Immediately-invoked async function to start the app
+        (async function() {
+            // This is the most important part. We get the library's components from the global 'window' object.
+            const { pipeline, env } = window.Transformers;
 
-        const PROMPT_TUTEUR = `Tu es un tuteur académique expert, amical et encourageant. Ton rôle est d'analyser les données scolaires de l'étudiant fournies ci-dessous et de répondre à ses questions de manière bienveillante et pédagogique. Explique les concepts simplement et aide l'étudiant à comprendre ses forces et ses faiblesses. Base toutes tes réponses STRICTEMENT sur les données fournies.`;
-        const PROMPT_ANALYSTE = `Tu es un moteur d'analyse de données purement logique et objectif. Ton seul rôle est d'interpréter les données brutes suivantes de manière factuelle. N'utilise aucun langage émotionnel, d'opinion ou d'encouragement. Fournis des faits, des statistiques, des tendances et des déductions logiques basées uniquement sur les données. Sois concis et précis.`;
+            // This line is now guaranteed to run correctly before anything else.
+            // It explicitly allows the library to download models from the internet.
+            env.allowRemoteModels = true;
 
-        function logToDebug(message) {
-            const timestamp = new Date().toLocaleTimeString();
-            debugLog.innerHTML += `[${timestamp}] ${message}\n`;
-            debugLog.scrollTop = debugLog.scrollHeight;
-        }
+            const status = document.getElementById('status');
+            const chatContainer = document.getElementById('chat-container');
+            const userInput = document.getElementById('user-input');
+            const sendBtn = document.getElementById('send-btn');
+            const aiModeCheckbox = document.getElementById('ai-mode-checkbox');
+            const debugPanel = document.getElementById('debug-panel');
+            const debugHeader = document.getElementById('debug-header');
+            const debugLog = document.getElementById('debug-log');
 
-        function addMessage(text, sender) {
-            const messageDiv = document.createElement('div');
-            messageDiv.classList.add('message', `${sender}-message`);
-            messageDiv.textContent = text;
-            chatContainer.appendChild(messageDiv);
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-            return messageDiv;
-        }
-        
-        function formatDataForSLM(rawData, analysisData) {
-            logToDebug("Début de la conversion des données en texte...");
-            let summary = `DONNÉES BRUTES DE L'ÉTUDIANT:\n`;
-            if (rawData?.nom) summary += `Nom: ${rawData.nom}\n`;
+            let tutorPipeline = null;
+            let studentDataContext = '';
+            let currentAiMode = 'tuteur'; // 'tuteur' or 'analyste'
 
-            ['etape1', 'etape2'].forEach(etape => {
-                if (rawData[etape] && rawData[etape].length > 0) {
-                    summary += `\n--- RÉSULTATS ${etape.toUpperCase()} ---\n`;
-                    rawData[etape].forEach(subject => {
-                        summary += `Sujet: ${subject.name} (${subject.code})\n`;
-                        subject.competencies.forEach(comp => {
-                            comp.assignments.forEach(assign => {
-                                if (assign.result) {
-                                    summary += `- Travail: "${assign.work}", Résultat: ${assign.result}\n`;
-                                }
+            const PROMPT_TUTEUR = `Tu es un tuteur académique expert, amical et encourageant. Ton rôle est d'analyser les données scolaires de l'étudiant fournies ci-dessous et de répondre à ses questions de manière bienveillante et pédagogique. Explique les concepts simplement et aide l'étudiant à comprendre ses forces et ses faiblesses. Base toutes tes réponses STRICTEMENT sur les données fournies.`;
+            const PROMPT_ANALYSTE = `Tu es un moteur d'analyse de données purement logique et objectif. Ton seul rôle est d'interpréter les données brutes suivantes de manière factuelle. N'utilise aucun langage émotionnel, d'opinion ou d'encouragement. Fournis des faits, des statistiques, des tendances et des déductions logiques basées uniquement sur les données. Sois concis et précis.`;
+
+            function logToDebug(message) {
+                const timestamp = new Date().toLocaleTimeString();
+                debugLog.innerHTML += `[${timestamp}] ${message}\n`;
+                debugLog.scrollTop = debugLog.scrollHeight;
+            }
+
+            function addMessage(text, sender) {
+                const messageDiv = document.createElement('div');
+                messageDiv.classList.add('message', `${sender}-message`);
+                messageDiv.textContent = text;
+                chatContainer.appendChild(messageDiv);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+                return messageDiv;
+            }
+            
+            function formatDataForSLM(rawData, analysisData) {
+                logToDebug("Début de la conversion des données en texte...");
+                let summary = `DONNÉES BRUTES DE L'ÉTUDIANT:\n`;
+                if (rawData?.nom) summary += `Nom: ${rawData.nom}\n`;
+
+                ['etape1', 'etape2'].forEach(etape => {
+                    if (rawData[etape] && rawData[etape].length > 0) {
+                        summary += `\n--- RÉSULTATS ${etape.toUpperCase()} ---\n`;
+                        rawData[etape].forEach(subject => {
+                            summary += `Sujet: ${subject.name} (${subject.code})\n`;
+                            subject.competencies.forEach(comp => {
+                                comp.assignments.forEach(assign => {
+                                    if (assign.result) {
+                                        summary += `- Travail: "${assign.work}", Résultat: ${assign.result}\n`;
+                                    }
+                                });
                             });
                         });
-                    });
-                }
-            });
-
-            if (analysisData) {
-                summary += `\n\nANALYSE PRÉDICTIVE ET STATISTIQUES:\n`;
-                if(analysisData.globalAverage) summary += `- Moyenne générale (connue): ${analysisData.globalAverage.toFixed(2)}%\n`;
-                if(analysisData.burnoutRiskScore) summary += `- Score de risque de burnout: ${analysisData.burnoutRiskScore.toFixed(0)}/100\n`;
-                if(analysisData.globalConsistencyScore) summary += `- Indice de consistance globale: ${analysisData.globalConsistencyScore.toFixed(0)}/100\n`;
-                if(analysisData.predictions?.global?.p50) summary += `- Prédiction de la moyenne finale (Médiane P50): ${analysisData.predictions.global.p50.toFixed(2)}%\n`;
-            }
-            logToDebug(`Conversion terminée. Longueur du contexte: ${summary.length} caractères.`);
-            return summary;
-        }
-
-        async function handleSend() {
-            const query = userInput.value.trim();
-            if (query === '' || !tutorPipeline) return;
-
-            addMessage(query, 'user');
-            userInput.value = '';
-            logToDebug(`Question de l'utilisateur: "${query}"`);
-            
-            const loadingMessage = addMessage("Réflexion en cours...", 'tutor');
-            loadingMessage.classList.add('loading');
-
-            const systemPrompt = currentAiMode === 'tuteur' ? PROMPT_TUTEUR : PROMPT_ANALYSTE;
-            logToDebug(`Mode IA actif: ${currentAiMode}. Construction du prompt...`);
-
-            const fullPrompt = `<|system|>\n${systemPrompt}\n\n--- DONNÉES DE L'ÉTUDIANT ---\n${studentDataContext}\n--- FIN DES DONNÉES ---\n</s>\n<|user|>\n${query}\n</s>\n<|assistant|>`;
-            
-            logToDebug("Prompt envoyé au modèle IA.");
-
-            try {
-                const result = await tutorPipeline(fullPrompt, {
-                    max_new_tokens: 300,
-                    do_sample: true,
-                    temperature: 0.7,
-                    top_k: 50,
+                    }
                 });
-                
-                const responseText = result[0].generated_text.split('<|assistant|>').pop().trim();
-                loadingMessage.textContent = responseText;
-                loadingMessage.classList.remove('loading');
-                logToDebug("Réponse IA reçue et affichée.");
 
-            } catch (e) {
-                const errorMsg = "Désolé, une erreur est survenue. Veuillez réessayer.";
-                loadingMessage.textContent = errorMsg;
-                loadingMessage.classList.remove('loading');
-                logToDebug(`ERREUR: ${e.message}`);
-                console.error(e);
-            }
-        }
-
-        async function main() {
-            logToDebug("Initialisation du Tuteur IA.");
-            try {
-                const rawData = JSON.parse(localStorage.getItem('mbsData'));
-                const analysisData = JSON.parse(localStorage.getItem('mbsProjectionCache'));
-                
-                if (!rawData || !rawData.valid) {
-                    status.textContent = "Données 'mbsData' introuvables.";
-                    logToDebug("ERREUR: 'mbsData' non valide ou introuvable dans le Local Storage.");
-                    return;
+                if (analysisData) {
+                    summary += `\n\nANALYSE PRÉDICTIVE ET STATISTIQUES:\n`;
+                    if(analysisData.globalAverage) summary += `- Moyenne générale (connue): ${analysisData.globalAverage.toFixed(2)}%\n`;
+                    if(analysisData.burnoutRiskScore) summary += `- Score de risque de burnout: ${analysisData.burnoutRiskScore.toFixed(0)}/100\n`;
+                    if(analysisData.globalConsistencyScore) summary += `- Indice de consistance globale: ${analysisData.globalConsistencyScore.toFixed(0)}/100\n`;
+                    if(analysisData.predictions?.global?.p50) summary += `- Prédiction de la moyenne finale (Médiane P50): ${analysisData.predictions.global.p50.toFixed(2)}%\n`;
                 }
-                logToDebug("'mbsData' et 'mbsProjectionCache' chargés avec succès.");
-                studentDataContext = formatDataForSLM(rawData, analysisData);
-
-                status.textContent = 'Chargement du modèle IA (peut prendre un moment)...';
-                logToDebug("Téléchargement du modèle: Xenova/flan-t5-small");
-
-                tutorPipeline = await pipeline('text-generation', 'Xenova/flan-t5-small');
-                
-                status.textContent = `Bonjour, ${rawData.nom}! Je suis prêt.`;
-                logToDebug("Modèle IA chargé et prêt.");
-                
-                userInput.disabled = false;
-                sendBtn.disabled = false;
-                addMessage("J'ai analysé vos données académiques. Comment puis-je vous aider aujourd'hui ?", 'tutor');
-
-            } catch (e) {
-                status.textContent = "Échec du chargement. Veuillez rafraîchir la page.";
-                logToDebug(`ERREUR critique à l'initialisation: ${e.message}`);
-                console.error(e);
+                logToDebug(`Conversion terminée. Longueur du contexte: ${summary.length} caractères.`);
+                return summary;
             }
-        }
 
-        sendBtn.addEventListener('click', handleSend);
-        userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleSend(); });
-        aiModeCheckbox.addEventListener('change', (e) => {
-            currentAiMode = e.target.checked ? 'analyste' : 'tuteur';
-            logToDebug(`Changement de mode IA -> ${currentAiMode.toUpperCase()}`);
-        });
-        debugHeader.addEventListener('click', () => debugPanel.classList.toggle('visible'));
+            async function handleSend() {
+                const query = userInput.value.trim();
+                if (query === '' || !tutorPipeline) return;
 
-        main();
+                addMessage(query, 'user');
+                userInput.value = '';
+                logToDebug(`Question de l'utilisateur: "${query}"`);
+                
+                const loadingMessage = addMessage("Réflexion en cours...", 'tutor');
+                loadingMessage.classList.add('loading');
+
+                const systemPrompt = currentAiMode === 'tuteur' ? PROMPT_TUTEUR : PROMPT_ANALYSTE;
+                logToDebug(`Mode IA actif: ${currentAiMode}. Construction du prompt...`);
+
+                const fullPrompt = `<|system|>\n${systemPrompt}\n\n--- DONNÉES DE L'ÉTUDIANT ---\n${studentDataContext}\n--- FIN DES DONNÉES ---\n</s>\n<|user|>\n${query}\n</s>\n<|assistant|>`;
+                
+                logToDebug("Prompt envoyé au modèle IA.");
+
+                try {
+                    const result = await pipeline(fullPrompt, {
+                        max_new_tokens: 300,
+                        do_sample: true,
+                        temperature: 0.7,
+                        top_k: 50,
+                    });
+                    
+                    const responseText = result[0].generated_text.split('<|assistant|>').pop().trim();
+                    loadingMessage.textContent = responseText;
+                    loadingMessage.classList.remove('loading');
+                    logToDebug("Réponse IA reçue et affichée.");
+
+                } catch (e) {
+                    const errorMsg = "Désolé, une erreur est survenue. Veuillez réessayer.";
+                    loadingMessage.textContent = errorMsg;
+                    loadingMessage.classList.remove('loading');
+                    logToDebug(`ERREUR: ${e.message}`);
+                    console.error(e);
+                }
+            }
+
+            async function main() {
+                logToDebug("Initialisation du Tuteur IA.");
+                try {
+                    const rawData = JSON.parse(localStorage.getItem('mbsData'));
+                    const analysisData = JSON.parse(localStorage.getItem('mbsProjectionCache'));
+                    
+                    if (!rawData || !rawData.valid) {
+                        status.textContent = "Données 'mbsData' introuvables.";
+                        logToDebug("ERREUR: 'mbsData' non valide ou introuvable dans le Local Storage.");
+                        return;
+                    }
+                    logToDebug("'mbsData' et 'mbsProjectionCache' chargés avec succès.");
+                    studentDataContext = formatDataForSLM(rawData, analysisData);
+
+                    status.textContent = 'Chargement du modèle IA (peut prendre un moment)...';
+                    logToDebug("Téléchargement du modèle: Xenova/flan-t5-small");
+
+                    tutorPipeline = await pipeline('text-generation', 'Xenova/flan-t5-small');
+                    
+                    status.textContent = `Bonjour, ${rawData.nom}! Je suis prêt.`;
+                    logToDebug("Modèle IA chargé et prêt.");
+                    
+                    userInput.disabled = false;
+                    sendBtn.disabled = false;
+                    addMessage("J'ai analysé vos données académiques. Comment puis-je vous aider aujourd'hui ?", 'tutor');
+
+                } catch (e) {
+                    status.textContent = "Échec du chargement. Veuillez rafraîchir la page.";
+                    logToDebug(`ERREUR critique à l'initialisation: ${e.message}`);
+                    console.error(e);
+                }
+            }
+
+            sendBtn.addEventListener('click', handleSend);
+            userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleSend(); });
+            aiModeCheckbox.addEventListener('change', (e) => {
+                currentAiMode = e.target.checked ? 'analyste' : 'tuteur';
+                logToDebug(`Changement de mode IA -> ${currentAiMode.toUpperCase()}`);
+            });
+            debugHeader.addEventListener('click', () => debugPanel.classList.toggle('visible'));
+
+            main(); // Start the application
+        })();
     </script>
+    <!-- *** END OF CHANGES *** -->
 </body>
 </html>
