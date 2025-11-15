@@ -10,6 +10,9 @@ const KNOWN_ETAPE_KEYS = ['etape1', 'etape2'];
 const NUM_MONTE_CARLO_RUNS = 100000; 
 const AI_R2_THRESHOLD = 0.25; 
 
+// --- CACHING MECHANISM ---
+const analysisCache = new Map(); 
+
 // --- CORE MATH & STATS ---
 
 function linearRegression(x_values, y_values) {
@@ -302,6 +305,23 @@ function calculatePathAnalysis(targetEtapeKey, allTermAverages, predictedMean, p
 // --- MAIN ANALYSIS FUNCTION ---
 
 function calculateAllAnalysis(mbsData) {
+    // Attempt to create a stable key from the input data
+    let cacheKey;
+    try {
+        cacheKey = JSON.stringify(mbsData);
+    } catch (e) {
+        // Fallback or error handling if mbsData cannot be stringified
+        console.error("Could not stringify mbsData for cache key:", e);
+        cacheKey = null; 
+    }
+
+    // Check cache
+    if (cacheKey && analysisCache.has(cacheKey)) {
+        // console.log("Returning cached analysis result for key:", cacheKey); // Uncomment for debugging
+        return analysisCache.get(cacheKey);
+    }
+
+    // --- Start of original calculation logic ---
     const settings = mbsData.settings || {};
     const units = getUnits(settings);
     const niveau = settings.niveau;
@@ -409,7 +429,7 @@ function calculateAllAnalysis(mbsData) {
     const probabilityAnalysisE2 = calculatePathAnalysis('etape2', allTermAverages, predictedE3SMean, predictedE3SSigma);
     const probabilityAnalysisE3 = calculatePathAnalysis('etape3', allTermAverages, predictedE3SMean, predictedE3SSigma);
 
-    return { 
+    const result = { 
         subjectAverages: allSubjectAverages, termAverages: allTermAverages, 
         globalAverage: globalAverageKnown, globalStdDev, 
         globalConsistencyScore, aiModels: aiModels, 
@@ -418,6 +438,14 @@ function calculateAllAnalysis(mbsData) {
         probabilityAnalysisE2, probabilityAnalysisE3,
         AI_R2_THRESHOLD, subjectGroups, subjectList
     };
+
+    // Save to cache before returning
+    if (cacheKey) {
+        analysisCache.set(cacheKey, result);
+        // console.log("Calculated and cached analysis result for key:", cacheKey); // Uncomment for debugging
+    }
+
+    return result;
 }
 
 // Expose the core functionality globally
