@@ -34,6 +34,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function calculateAndCacheAnalysis() {
         cachedAnalysis = CoreAnalysis.calculateAll(mbsData);
+                // --- ADD THIS CODE ---
+        // This new block saves the result into a separate local storage item.
+        try {
+            localStorage.setItem('mbsAnalysisCache', JSON.stringify(cachedAnalysis));
+            console.log("Analysis results have been saved to local storage under 'mbsAnalysisCache'.");
+        } catch (e) {
+            console.error("Could not save analysis results to local storage.", e);
+        }
+        // --- END OF ADDED CODE ---
+    }
     }
 
     // --- DATA & SETTINGS MANAGEMENT ---
