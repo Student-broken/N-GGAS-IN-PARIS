@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tuteur Académique IA (V6 - Stable)</title>
+    <title>Tuteur Académique IA (V-Final)</title>
     <!-- CSS is unchanged and omitted for brevity -->
     <style>
         :root{--user-color:#007bff;--tutor-color:#f1f1f1;--background-color:#ffffff;--text-color:#212529;--border-color:#dee2e6}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;margin:0;display:flex;flex-direction:column;height:100vh;background-color:var(--background-color);color:var(--text-color)}#header{display:flex;justify-content:space-between;align-items:center;padding:.75rem 1.5rem;border-bottom:1px solid var(--border-color);background-color:var(--background-color);flex-shrink:0}#header h1{font-size:1.25rem;margin:0}#status{font-size:.8rem;color:#6c757d}.ai-mode-toggle{display:flex;align-items:center;gap:.5rem}.switch{position:relative;display:inline-block;width:100px;height:34px}.switch input{opacity:0;width:0;height:0}.slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background-color:#ccc;transition:.4s;border-radius:34px}.slider:before{position:absolute;content:"";height:26px;width:26px;left:4px;bottom:4px;background-color:white;transition:.4s;border-radius:50%}input:checked+.slider{background-color:var(--user-color)}input:checked+.slider:before{transform:translateX(66px)}.slider:after{content:'Tuteur';color:white;display:block;position:absolute;transform:translate(-50%,-50%);top:50%;left:30%;font-size:12px}input:checked+.slider:after{content:'Analyste';left:70%}#chat-container{flex-grow:1;padding:1rem 1.5rem;overflow-y:auto;display:flex;flex-direction:column;gap:1rem}.message{padding:10px 18px;border-radius:22px;max-width:80%;line-height:1.5;word-wrap:break-word}.user-message{background-color:var(--user-color);color:white;align-self:flex-end}.tutor-message{background-color:var(--tutor-color);color:var(--text-color);align-self:flex-start}.tutor-message.loading::after{content:'...';display:inline-block;animation:dots 1.5s infinite steps(3,end)}@keyframes dots{0%{content:'.'}33%{content:'..'}66%{content:'...'}}#input-area{display:flex;padding:1rem 1.5rem;border-top:1px solid var(--border-color);background-color:rgba(255,255,255,.8);backdrop-filter:blur(10px)}#user-input{flex-grow:1;border:1px solid #ccc;border-radius:22px;padding:10px 18px;font-size:1rem;resize:none}#send-btn{background-color:var(--user-color);color:white;border:none;border-radius:50%;width:44px;height:44px;margin-left:10px;font-size:1.5rem;cursor:pointer;transition:background-color .2s;display:flex;align-items:center;justify-content:center}#send-btn:disabled{background-color:#a0a0a0;cursor:not-allowed}#debug-panel{position:fixed;bottom:0;left:0;right:0;background-color:#111;color:#0f0;font-family:'Courier New',Courier,monospace;font-size:12px;max-height:25vh;overflow-y:auto;border-top:2px solid var(--user-color);z-index:1000;transition:transform .3s ease-in-out;transform:translateY(100%)}#debug-panel.visible{transform:translateY(calc(100% - 30px))}#debug-panel:hover{transform:translateY(0)}#debug-header{padding:5px 10px;background-color:#333;cursor:pointer}#debug-log{padding:10px;white-space:pre-wrap}
@@ -11,7 +11,7 @@
 </head>
 <body>
     <div id="header">
-        <div><h1>Tuteur Académique IA (V6)</h1><div id="status">Chargement...</div></div>
+        <div><h1>Tuteur Académique IA (Final)</h1><div id="status">Chargement...</div></div>
         <div class="ai-mode-toggle"><label class="switch"><input type="checkbox" id="ai-mode-checkbox"><span class="slider"></span></label></div>
     </div>
     <div id="chat-container"></div>
@@ -19,7 +19,6 @@
     <div id="debug-panel"><div id="debug-header">Journal de Débogage &#9660;</div><div id="debug-log"></div></div>
 
     <script type="module">
-        // --- THIS IS THE NEW, ROBUST LOADING SCRIPT ---
         import { pipeline, AutoTokenizer, AutoModelForCausalLM } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.1';
         
         const status = document.getElementById('status');
@@ -30,19 +29,56 @@
         const debugLog = document.getElementById('debug-log');
         const debugHeader = document.getElementById('debug-header');
 
-        let tutorPipeline = null;
+        let generator = null;
         let tokenizer = null;
         let chatHistory = [];
         let currentAiMode = 'tuteur';
 
-        // Helper functions (addMessage, logToDebug, formatDataForSLM) are unchanged
-        function logToDebug(message) { /* ... */ }
-        function addMessage(text, sender) { /* ... */ }
-        function formatDataForSLM(rawData, analysisData) { /* ... */ }
+        // --- HELPER FUNCTIONS (DEFINED ONCE) ---
+        function logToDebug(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            debugLog.innerHTML += `[${timestamp}] ${message}\n`;
+            debugLog.scrollTop = debugLog.scrollHeight;
+        }
 
+        function addMessage(text, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', `${sender}-message`);
+            messageDiv.textContent = text;
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            return messageDiv;
+        }
+        
+        function formatDataForSLM(rawData, analysisData) {
+            let summary = `Tu as accès aux données académiques suivantes pour un étudiant nommé ${rawData.nom || 'l\'étudiant'}.\n\n`;
+            ['etape1', 'etape2'].forEach(etape => {
+                if (rawData[etape] && rawData[etape].length > 0) {
+                    summary += `--- RÉSULTATS ${etape.toUpperCase()} ---\n`;
+                    rawData[etape].forEach(subject => {
+                        summary += `Sujet: ${subject.name} (${subject.code})\n`;
+                        subject.competencies.forEach(comp => {
+                            comp.assignments.forEach(assign => {
+                                if (assign.result) summary += `- Travail: "${assign.work}", Résultat: ${assign.result}\n`;
+                            });
+                        });
+                    });
+                }
+            });
+            if (analysisData) {
+                summary += `\n--- ANALYSE PRÉDICTIVE ---\n`;
+                if(analysisData.globalAverage) summary += `- Moyenne générale (calculée sur les étapes connues): ${analysisData.globalAverage.toFixed(2)}%\n`;
+                if(analysisData.burnoutRiskScore) summary += `- Score de risque de burnout: ${analysisData.burnoutRiskScore.toFixed(0)}/100\n`;
+                if(analysisData.globalConsistencyScore) summary += `- Indice de consistance: ${analysisData.globalConsistencyScore.toFixed(0)}/100\n`;
+                if(analysisData.predictions?.global?.p50) summary += `- Prédiction de la moyenne finale (Médiane): ${analysisData.predictions.global.p50.toFixed(2)}%\n`;
+            }
+            return summary;
+        }
+
+        // --- CORE AI & UI LOGIC ---
         async function handleSend() {
             const query = userInput.value.trim();
-            if (query === '' || !tutorPipeline) return;
+            if (query === '' || !generator) return;
             addMessage(query, 'user');
             userInput.value = '';
             
@@ -57,12 +93,11 @@
             });
 
             try {
-                const result = await tutorPipeline(fullPrompt, {
+                const result = await generator(fullPrompt, {
                     max_new_tokens: 300,
                     do_sample: true,
                     temperature: 0.7,
                     top_k: 50,
-                    eos_token_id: tokenizer.eos_token_id
                 });
                 
                 const responseText = result[0].generated_text.split(fullPrompt).pop().trim();
@@ -77,7 +112,7 @@
         }
 
         async function main() {
-            logToDebug("Initializing Tutor AI (V6 - Manual Assembly)...");
+            logToDebug("Initializing Tutor AI (V-Final with Qwen1.5)...");
             try {
                 const rawData = JSON.parse(localStorage.getItem('mbsData'));
                 const analysisData = JSON.parse(localStorage.getItem('mbsProjectionCache'));
@@ -86,35 +121,32 @@
                 }
                 const dataContext = formatDataForSLM(rawData, analysisData);
 
-                const model_id = 'Xenova/TinyLlama-1.1B-Chat-v1.0';
+                const model_id = 'Xenova/Qwen1.5-0.5B-Chat';
                 
-                // --- MANUAL ASSEMBLY PROCESS ---
-                logToDebug(`STEP 1: Loading Tokenizer for [${model_id}]`);
-                status.textContent = "Étape 1/2 : Chargement du tokenizer...";
-                // We pass `false` for `use_fast` to ensure compatibility
-                tokenizer = await AutoTokenizer.from_pretrained(model_id, { use_fast: false });
-                logToDebug("Tokenizer loaded successfully.");
+                // We create a pipeline directly. The library is smart enough to handle
+                // tokenizer and model loading internally based on the pipeline task.
+                // This is the simplest, most reliable method.
+                logToDebug(`Creating pipeline with model [${model_id}]...`);
+                status.textContent = "Chargement du modèle IA (rapide)...";
 
-                logToDebug(`STEP 2: Loading Main Model for [${model_id}]`);
-                status.textContent = "Étape 2/2 : Chargement du modèle principal...";
-                const model = await AutoModelForCausalLM.from_pretrained(model_id, {
+                generator = await pipeline('text-generation', model_id, {
                     progress_callback: (p) => {
-                        status.textContent = `Étape 2/2 : Chargement... (${p.file.split('/').pop()}: ${Math.round(p.progress)}%)`;
+                        status.textContent = `Chargement... (${p.file.split('/').pop()}: ${Math.round(p.progress)}%)`;
                     }
                 });
-                logToDebug("Main model loaded successfully.");
-
-                // Manually create the pipeline from the pre-loaded components
-                tutorPipeline = await pipeline('text-generation', model, { tokenizer });
                 
-                // Initialize chat history with the system prompt
+                // We still need the tokenizer for formatting the chat history
+                tokenizer = await AutoTokenizer.from_pretrained(model_id);
+
+                logToDebug("AI pipeline and tokenizer ready.");
+                
                 const personalityPrompt = currentAiMode === 'tuteur' 
                     ? `Tu es un tuteur académique expert, amical et encourageant.`
                     : `Tu es un moteur d'analyse de données purement logique et objectif.`;
                 
                 chatHistory = [{
                     role: 'system',
-                    content: `${personalityPrompt} ${dataContext}`
+                    content: `${personalityPrompt} Tu dois baser toutes tes réponses sur le contexte suivant:\n${dataContext}`
                 }];
                 
                 status.textContent = `Bonjour, ${rawData.nom}! Je suis prêt.`;
@@ -128,21 +160,15 @@
                 console.error(e);
             }
         }
-        
-        // Minor code for helper functions to be included
-        // (This is just to make the snippet complete)
-        function logToDebug(message) {const timestamp = new Date().toLocaleTimeString();debugLog.innerHTML += `[${timestamp}] ${message}\n`;debugLog.scrollTop = debugLog.scrollHeight;}
-        function addMessage(text, sender) {const messageDiv = document.createElement('div');messageDiv.classList.add('message', `${sender}-message`);messageDiv.textContent = text;chatContainer.appendChild(messageDiv);chatContainer.scrollTop = chatContainer.scrollHeight;return messageDiv;}
-        function formatDataForSLM(rawData, analysisData) {let summary = `Tu as accès aux données académiques suivantes pour un étudiant nommé ${rawData.nom || 'l\'étudiant'}.\n\n`;['etape1', 'etape2'].forEach(etape => {if (rawData[etape] && rawData[etape].length > 0) {summary += `--- RÉSULTATS ${etape.toUpperCase()} ---\n`;rawData[etape].forEach(subject => {summary += `Sujet: ${subject.name} (${subject.code})\n`;subject.competencies.forEach(comp => {comp.assignments.forEach(assign => {if (assign.result) summary += `- Travail: "${assign.work}", Résultat: ${assign.result}\n`;});});});}});if (analysisData) {summary += `\n--- ANALYSE PRÉDICTIVE ---\n`;if(analysisData.globalAverage) summary += `- Moyenne générale (calculée sur les étapes connues): ${analysisData.globalAverage.toFixed(2)}%\n`;if(analysisData.burnoutRiskScore) summary += `- Score de risque de burnout: ${analysisData.burnoutRiskScore.toFixed(0)}/100\n`;if(analysisData.globalConsistencyScore) summary += `- Indice de consistance: ${analysisData.globalConsistencyScore.toFixed(0)}/100\n`;if(analysisData.predictions?.global?.p50) summary += `- Prédiction de la moyenne finale (Médiane): ${analysisData.predictions.global.p50.toFixed(2)}%\n`;}return summary;}
 
-        // Event listeners are unchanged
+        // --- EVENT LISTENERS ---
         sendBtn.addEventListener('click', handleSend);
         userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleSend(); });
         aiModeCheckbox.addEventListener('change', (e) => {
             currentAiMode = e.target.checked ? 'analyste' : 'tuteur';
             const dataContext = formatDataForSLM(JSON.parse(localStorage.getItem('mbsData')), JSON.parse(localStorage.getItem('mbsProjectionCache')));
             const personalityPrompt = currentAiMode === 'tuteur' ? `Tu es un tuteur...` : `Tu es un moteur d'analyse...`;
-            chatHistory = [{ role: 'system', content: `${personalityPrompt} ${dataContext}` }];
+            chatHistory = [{ role: 'system', content: `${personalityPrompt} Tu dois baser toutes tes réponses sur le contexte suivant:\n${dataContext}` }];
             addMessage("[Le mode de l'IA a changé. La conversation a été réinitialisée.]", 'tutor');
         });
         debugHeader.addEventListener('click', () => document.getElementById('debug-panel').classList.toggle('visible'));
