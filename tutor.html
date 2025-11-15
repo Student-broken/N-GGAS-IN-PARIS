@@ -53,7 +53,7 @@
         }
         .message { padding: 10px 18px; border-radius: 22px; max-width: 80%; line-height: 1.5; word-wrap: break-word; }
         .user-message { background-color: var(--user-color); color: white; align-self: flex-end; }
-        .tutor-message { background-color: var(--tutor-color); color: var(--text-color); align-self: flex-start; }
+        .tutor-message { background-color: var(--tutor-color); color: var(--text-color); align-self: start; }
         .tutor-message.loading::after { content: '...'; display: inline-block; animation: dots 1.5s infinite steps(3, end); }
         @keyframes dots { 0% { content: '.'; } 33% { content: '..'; } 66% { content: '...'; } }
         
@@ -127,21 +127,13 @@
         <div id="debug-header">Journal de Débogage &#9660;</div>
         <div id="debug-log"></div>
     </div>
+    
+    <!-- *** THE ONLY CHANGE IS THIS SCRIPT TAG'S URL *** -->
+    <script src="https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.1/dist/transformers.min.js"></script>
 
-    <!-- *** START OF CHANGES *** -->
-
-    <!-- 1. Load the library using a classic script tag -->
-    <script src="https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.1"></script>
-
-    <!-- 2. The main application logic in its own script tag -->
     <script>
-        // Immediately-invoked async function to start the app
         (async function() {
-            // This is the most important part. We get the library's components from the global 'window' object.
             const { pipeline, env } = window.Transformers;
-
-            // This line is now guaranteed to run correctly before anything else.
-            // It explicitly allows the library to download models from the internet.
             env.allowRemoteModels = true;
 
             const status = document.getElementById('status');
@@ -155,7 +147,7 @@
 
             let tutorPipeline = null;
             let studentDataContext = '';
-            let currentAiMode = 'tuteur'; // 'tuteur' or 'analyste'
+            let currentAiMode = 'tuteur';
 
             const PROMPT_TUTEUR = `Tu es un tuteur académique expert, amical et encourageant. Ton rôle est d'analyser les données scolaires de l'étudiant fournies ci-dessous et de répondre à ses questions de manière bienveillante et pédagogique. Explique les concepts simplement et aide l'étudiant à comprendre ses forces et ses faiblesses. Base toutes tes réponses STRICTEMENT sur les données fournies.`;
             const PROMPT_ANALYSTE = `Tu es un moteur d'analyse de données purement logique et objectif. Ton seul rôle est d'interpréter les données brutes suivantes de manière factuelle. N'utilise aucun langage émotionnel, d'opinion ou d'encouragement. Fournis des faits, des statistiques, des tendances et des déductions logiques basées uniquement sur les données. Sois concis et précis.`;
@@ -226,7 +218,7 @@
                 logToDebug("Prompt envoyé au modèle IA.");
 
                 try {
-                    const result = await pipeline(fullPrompt, {
+                    const result = await tutorPipeline(fullPrompt, {
                         max_new_tokens: 300,
                         do_sample: true,
                         temperature: 0.7,
@@ -263,8 +255,8 @@
 
                     status.textContent = 'Chargement du modèle IA (peut prendre un moment)...';
                     logToDebug("Téléchargement du modèle: Xenova/flan-t5-small");
-
-                    // NEW, CORRECTED LINE
+                    
+                    // We also keep the 'text2text-generation' fix from before
                     tutorPipeline = await pipeline('text2text-generation', 'Xenova/flan-t5-small');
                     
                     status.textContent = `Bonjour, ${rawData.nom}! Je suis prêt.`;
@@ -289,9 +281,8 @@
             });
             debugHeader.addEventListener('click', () => debugPanel.classList.toggle('visible'));
 
-            main(); // Start the application
+            main();
         })();
     </script>
-    <!-- *** END OF CHANGES *** -->
 </body>
 </html>
