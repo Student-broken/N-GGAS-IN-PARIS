@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF--8">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Analyse - Outil MBS</title>
     <link rel="icon" href="https://raw.githubusercontent.com/Student-broken/student-broken.github.io/refs/heads/main/favicon.ico" type="image/x-icon">
@@ -51,15 +51,19 @@
             --goal-success-bg: #1a3e2a;
             --goal-warning-bg: #4d381c;
             --goal-danger-bg: #4f2323;
-            .site-header, .widget-title { color: var(--text-color); }
-            .comp-widget, .calculator-container { background-color: #282828; border-color: var(--border-color); }
-            .modal-content { background-color: var(--background-color); }
-            .modal-header { background-color: #2c3e50; }
-            .goal-input input { background-color: #282828; border-color: var(--light-grey); color: var(--text-color); }
-            .order-editor-content { background-color: #282828; }
-            #order-list li { background-color: #333; }
-            .grade-pill { background-color: #444; }
         }
+
+        /* Corrected Dark Mode Styles */
+        [data-theme="dark"] .site-header,
+        [data-theme="dark"] .widget-title { color: var(--text-color); }
+        [data-theme="dark"] .comp-widget,
+        [data-theme="dark"] .calculator-container { background-color: #282828; border-color: var(--border-color); }
+        [data-theme="dark"] .modal-content { background-color: var(--background-color); }
+        [data-theme="dark"] .modal-header { background-color: #2c3e50; }
+        [data-theme="dark"] .goal-input input { background-color: #282828; border-color: var(--light-grey); color: var(--text-color); }
+        [data-theme="dark"] .order-editor-content { background-color: #282828; }
+        [data-theme="dark"] #order-list li { background-color: #333; }
+        [data-theme="dark"] .grade-pill { background-color: #444; }
 
         /* GLOBAL TRANSITIONS */
         body, .site-header-container, .sticky-tabs, .subject-widget, .modal-content, .tab-btn, .comp-widget, .calculator-container, input {
@@ -186,6 +190,22 @@
             <!-- Modal content populated by JS -->
         </div>
     </div>
+    
+    <!-- ADDED: Structure for the Order Editor Modal -->
+    <div id="order-editor-modal" class="modal-overlay">
+        <div class="order-editor-content">
+            <h3>Modifier l'ordre</h3>
+            <p class="editor-instructions">Glissez et déposez les matières pour les réorganiser.</p>
+            <ul id="order-list">
+                <!-- Draggable items will be populated by JS -->
+            </ul>
+            <div class="order-editor-footer">
+                <button class="btn btn-secondary" id="cancel-order">Annuler</button>
+                <button class="btn btn-primary" id="save-order">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+
 
     <footer><p>Outil MBS - Moyenne, Bilan, Stratégie</p></footer>
 
