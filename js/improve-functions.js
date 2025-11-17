@@ -4,7 +4,7 @@ const subjectNames = { 'ART':"Arts", 'MUS':"Musique", 'DRM':"Art Dram.", 'CAT':"
 const TERM_WEIGHTS = { etape1:0.20, etape2:0.20, etape3:0.60 };
 
 let mbsData = {};
-let rankingData = { status: 'idle', data: null, error: null }; 
+let rankingData = { status: 'idle', data: null, error: null }; // idle, loading, loaded, error
 
 let activeGauges = {};
 let activeWidgetCharts = {};
@@ -17,6 +17,23 @@ const expandedViewGrid = document.getElementById('expanded-view-grid');
 
 // --- INITIALIZATION ---
 document.addEventListener('DOMContentLoaded', () => {
+    // Add new styles dynamically to the head
+    const styleSheet = document.createElement("style");
+    styleSheet.innerText = `
+        .subject-list-view .comp-widget { flex: 1 1 100%; min-width: auto; padding: 10px; }
+        .subject-list-view .comp-widget h4 { font-size: 0.9em; margin-bottom: 4px; }
+        .subject-list-view .comp-widget .avg { font-size: 1.1em; }
+        .summary-widget { display: flex; flex-direction: column; }
+        .summary-widget .widget-top-section { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+        .summary-widget .widget-info { width: 100%; }
+        .summary-widget .histogram-container { flex: 1; }
+        .details-widget-body { display: flex; flex-direction: column; }
+        .details-scroll-content { flex: 1 1 auto; overflow-y: auto; padding-right: 5px; }
+        .btn-full-width { display: block; text-align: center; padding: 12px; background-color: var(--primary-color); color: white; text-decoration: none; border-radius: 8px; margin-top: auto; flex-shrink: 0; transition: background-color 0.2s; }
+        .btn-full-width:hover { background-color: var(--accent-color); }
+    `;
+    document.head.appendChild(styleSheet);
+
     setupTheme();
     init();
 });
@@ -250,7 +267,6 @@ function renderGeneralAverageWidget(subjects, etapeKey) {
         <div class="histogram-container"><canvas id="${chartCanvasId}"></canvas></div>`;
     
     widget.addEventListener('click', () => openExpandedViewForGeneral(subjects, etapeKey, totalAverage, history));
-
     widgetGrid.prepend(widget);
     renderGauge(`gauge-${chartCanvasId}`, totalAverage);
     
@@ -277,44 +293,41 @@ function renderGeneralAverageWidget(subjects, etapeKey) {
     });
 }
 
-
 // --- EXPANDED VIEW LOGIC ---
 function openExpandedView(subject) {
     expandedViewGrid.innerHTML = '';
     const subjectAverage = calculateSubjectAverage(subject);
     
     const summaryWidget = document.createElement('div');
-    summaryWidget.className = 'subject-widget';
-    // --- 1/3 Height Logic (Flexbox) ---
+    summaryWidget.className = 'subject-widget summary-widget';
     summaryWidget.innerHTML = `
-        <div style="height:100%; display:flex; flex-direction:column; gap: 10px;">
-            <div class="widget-top-section" style="flex: 1; align-items: center;">
-                <div class="widget-info">
-                    <h3 class="widget-title">${subject.name} (Résumé)</h3>
-                    <p class="widget-average">${subjectAverage.toFixed(2)}%</p>
-                </div>
-                <div class="gauge-container"><canvas id="expanded-gauge-chart"></canvas></div>
+        <div class="widget-top-section">
+            <div class="widget-info">
+                <h3 class="widget-title">${subject.name} (Résumé)</h3>
+                <p class="widget-average">${subjectAverage.toFixed(2)}%</p>
             </div>
-            <div class="histogram-container" style="flex: 1; margin:0;"><canvas id="expanded-hist-chart"></canvas></div>
-            <div class="histogram-container" style="flex: 1; margin:0;"><canvas id="expanded-line-chart"></canvas></div>
-        </div>`;
+            <div class="gauge-container"><canvas id="expanded-gauge-chart"></canvas></div>
+        </div>
+        <div class="histogram-container"><canvas id="expanded-hist-chart"></canvas></div>
+        <div class="histogram-container"><canvas id="expanded-line-chart"></canvas></div>`;
     
     const detailsWidget = document.createElement('div');
     detailsWidget.className = 'subject-widget';
-    // --- Button & Vertical Org ---
     detailsWidget.innerHTML = `
-        <h3 class="widget-title" style="margin-bottom:15px;">Détails & Planificateur</h3>
-        <div class="details-widget-body" style="display:flex; flex-direction:column; height: calc(100% - 40px);">
-            <div class="competency-widgets"></div>
-            <div class="graph-container" style="height: 200px; flex-shrink: 0; position: relative;"><canvas id="assignmentsChart"></canvas></div>
-            <div class="calculator-container" style="margin-top: 15px; flex-shrink: 0;"></div>
-            <div style="margin-top: auto; padding-top: 15px;">
-                <a href="projection.html" class="btn-secondary" style="display:block; text-align:center; width:100%; padding: 10px; border-radius: 8px; box-sizing: border-box;">En savoir plus sur la projection</a>
+        <h3 class="widget-title" style="margin-bottom:20px;">Détails & Planificateur</h3>
+        <div class="details-widget-body">
+            <div class="details-scroll-content">
+                <div class="competency-widgets"></div>
+                <div class="graph-container" style="height: 250px; margin-top: 20px; position: relative;"><canvas id="assignmentsChart"></canvas></div>
+                <div class="calculator-container"></div>
             </div>
+            <a href="projection.html?subject=${encodeURIComponent(subject.name)}" class="btn-full-width">Plus d'information</a>
         </div>`;
     
     const rankingWidget = document.createElement('div');
     rankingWidget.className = 'subject-widget';
+    const rankingKey = subject.code.substring(0, 3);
+    rankingWidget.setAttribute('data-ranking-key', rankingKey);
     rankingWidget.innerHTML = `<h3 class="widget-title">Classement de la matière</h3><div id="ranking-content" style="height: calc(100% - 40px); display: flex; flex-direction: column;"></div>`;
 
     expandedViewGrid.append(summaryWidget, detailsWidget, rankingWidget);
@@ -324,8 +337,6 @@ function openExpandedView(subject) {
     renderHistogram('expanded-hist-chart', subject, activeExpandedCharts);
     renderLineGraph('expanded-line-chart', subject, activeExpandedCharts);
     populateDetailsWidget(detailsWidget, subject);
-    
-    const rankingKey = subject.code.substring(0, 3);
     populateRankingWidget(rankingWidget, rankingKey);
 }
 
@@ -333,52 +344,47 @@ function openExpandedViewForGeneral(subjects, etapeKey, average, history) {
     expandedViewGrid.innerHTML = '';
     const title = `Moyenne Générale (${etapeKey === 'generale' ? 'Toutes' : etapeKey.replace('etape', 'Étape ')})`;
 
-    // Left Summary Widget
     const summaryWidget = document.createElement('div');
-    summaryWidget.className = 'subject-widget';
-    // --- 1/3 Height Logic (Flexbox) ---
+    summaryWidget.className = 'subject-widget summary-widget';
     summaryWidget.innerHTML = `
-        <div style="height:100%; display:flex; flex-direction:column; gap: 10px;">
-            <div class="widget-top-section" style="flex: 1; align-items: center;">
-                <div class="widget-info">
-                    <h3 class="widget-title">${title} (Résumé)</h3>
-                    <p class="widget-average">${average.toFixed(2)}%</p>
-                </div>
-                <div class="gauge-container"><canvas id="expanded-gauge-chart"></canvas></div>
+        <div class="widget-top-section">
+            <div class="widget-info">
+                <h3 class="widget-title">${title} (Résumé)</h3>
+                <p class="widget-average">${average.toFixed(2)}%</p>
             </div>
-            <div class="histogram-container" style="flex: 1; margin:0;"><canvas id="expanded-hist-chart"></canvas></div>
-            <div class="histogram-container" style="flex: 1; margin:0;"><canvas id="expanded-line-chart"></canvas></div>
-        </div>`;
+            <div class="gauge-container"><canvas id="expanded-gauge-chart"></canvas></div>
+        </div>
+        <div class="histogram-container"><canvas id="expanded-hist-chart"></canvas></div>
+        <div class="histogram-container"><canvas id="expanded-line-chart"></canvas></div>`;
 
-    // Center Details Widget
     const detailsWidget = document.createElement('div');
     detailsWidget.className = 'subject-widget';
-    // --- Button & Vertical Org ---
     detailsWidget.innerHTML = `
-        <h3 class="widget-title" style="margin-bottom:15px;">Détail par Matière</h3>
-        <div class="details-widget-body" style="display:flex; flex-direction:column; height: calc(100% - 40px);">
-            <div class="competency-widgets" style="max-height: 300px; overflow-y: auto; margin-bottom: 15px;"></div>
-            <div class="graph-container" style="flex: 1; min-height: 150px; position: relative;"><canvas id="assignmentsChart"></canvas></div>
-            <div style="margin-top: auto; padding-top: 15px;">
-                <a href="projection.html" class="btn-secondary" style="display:block; text-align:center; width:100%; padding: 10px; border-radius: 8px; box-sizing: border-box;">En savoir plus sur la projection</a>
+        <h3 class="widget-title" style="margin-bottom:20px;">Détail par Matière</h3>
+        <div class="details-widget-body">
+            <div class="details-scroll-content">
+                <div class="competency-widgets subject-list-view"></div>
+                <div class="graph-container" style="height: 250px; margin-top: 20px; position: relative;"><canvas id="assignmentsChart"></canvas></div>
+                <div class="calculator-container">
+                    <p>Le planificateur est disponible uniquement pour les matières individuelles.</p>
+                </div>
             </div>
+            <a href="projection.html" class="btn-full-width">Plus d'information</a>
         </div>`;
 
-    // Right Ranking Widget
     const rankingWidget = document.createElement('div');
     rankingWidget.className = 'subject-widget';
+    const rankingKey = etapeKey === 'generale' ? 'GlobalAverage' : `Etape${etapeKey.slice(-1)}Average`;
+    rankingWidget.setAttribute('data-ranking-key', rankingKey);
     rankingWidget.innerHTML = `<h3 class="widget-title">Classement de la Moyenne</h3><div id="ranking-content" style="height: calc(100% - 40px); display: flex; flex-direction: column;"></div>`;
 
     expandedViewGrid.append(summaryWidget, detailsWidget, rankingWidget);
     expandedViewOverlay.classList.add('active');
 
-    // Populate widgets
     renderGauge('expanded-gauge-chart', average);
     renderSubjectDistributionHistogram('expanded-hist-chart', subjects, activeExpandedCharts);
     renderGeneralAverageHistoryGraph('expanded-line-chart', history, activeExpandedCharts);
     populateGeneralDetailsWidget(detailsWidget, subjects);
-    
-    const rankingKey = etapeKey === 'generale' ? 'GlobalAverage' : `Etape${etapeKey.slice(-1)}Average`;
     populateRankingWidget(rankingWidget, rankingKey);
 }
 
@@ -432,15 +438,13 @@ function populateGeneralDetailsWidget(widget, subjects) {
     subjects.forEach(subject => {
         const subjectWidget = document.createElement('div');
         subjectWidget.className = 'comp-widget';
-        // --- MODIFIED --- Small, thin bubbles
-        subjectWidget.style.cssText = 'padding: 8px 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; min-width: auto; width: 100%; box-sizing: border-box; font-size: 0.95em;';
-        subjectWidget.innerHTML = `<span style="font-weight:600;">${subject.name}</span><span>${subject.average.toFixed(1)}%</span>`;
+        subjectWidget.innerHTML = `<h4>${subject.name}</h4><div class="avg">${subject.average.toFixed(1)}%</div>`;
         subjectContainer.appendChild(subjectWidget);
     });
     renderSubjectAveragesChart(subjects);
 }
 
-// --- RANKING LOGIC ---
+// --- RANKING LOGIC (WITH GHOST LOADING FIX) ---
 async function fetchRankingData() {
     if (rankingData.status === 'loading' || rankingData.status === 'loaded') return;
     
@@ -465,6 +469,16 @@ async function fetchRankingData() {
         if (allData.result === 'error') throw new Error(allData.error);
         
         rankingData = { status: 'loaded', data: allData, error: null };
+
+        // --- GHOST LOADING FIX ---
+        // After data is loaded, check if a ranking widget is currently visible and needs an update.
+        const visibleRankingWidget = document.querySelector('#expanded-view-overlay.active .subject-widget[data-ranking-key]');
+        if (visibleRankingWidget) {
+            const rankingKey = visibleRankingWidget.dataset.rankingKey;
+            populateRankingWidget(visibleRankingWidget, rankingKey);
+        }
+        // --- END FIX ---
+
     } catch (error) {
         console.error("Ranking Fetch Error:", error);
         rankingData = { status: 'error', data: null, error: error.message };
@@ -474,7 +488,7 @@ async function fetchRankingData() {
 function populateRankingWidget(widget, rankingKey) {
     const contentEl = widget.querySelector('#ranking-content');
     
-    if (rankingData.status === 'loading') {
+    if (rankingData.status === 'loading' || rankingData.status === 'idle') {
         contentEl.innerHTML = `<p>Synchronisation des classements...</p><div class="ghost-item"></div><div class="ghost-item"></div><div class="ghost-item"></div>`;
         return;
     }
@@ -521,6 +535,9 @@ function populateRankingWidget(widget, rankingKey) {
     renderRankingComparisonChart('ranking-comparison-chart', levelData, currentUserData);
 }
 
+
+// --- All other functions (charts, helpers, goal planner) remain unchanged ---
+// They are included here for completeness.
 function openOrderEditor(subject) {
     const existingModal = document.getElementById('order-editor-modal');
     if(existingModal) existingModal.remove();
@@ -742,9 +759,6 @@ function setupIntraSubjectCalculator(subject, container, goalInput) {
     goalInput.addEventListener('input', calculate);
     calculate();
 }
-
-
-// --- CHART RENDERING FUNCTIONS ---
 function renderGauge(canvasId, value) {
     const ctx = document.getElementById(canvasId).getContext('2d');
     const gradient = ctx.createLinearGradient(0, 0, 120, 0);
