@@ -36,7 +36,7 @@
 
     <script type="module">
         // --- PASTE YOUR GOOGLE APPS SCRIPT URL HERE ---
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxT8ycWJRqRdmglHFwl9AOXaM5K7AYZ_eluriMTnxukKRotslrHhKDDDYCJv_fnIwzS/exec';
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyMTyVOC5CFEDrfR8tR3vhg1HrwutS7GqxN0vRgshiZvhoWMs2jaeMzc42QD99noAFQ/exec';
         // ---------------------------------------------
 
         const chatInput = document.getElementById('chat-input');
@@ -47,11 +47,58 @@
 
         let studentDataContext = null;
 
-        function logToConsole(message, isError = false) { /* ... */ }
-        function addMessageToChat(text, role) { /* ... */ }
-        function formatDataForSLM(rawData, analysisData) { /* ... */ }
-        function buildSmartPrompt(userQuestion) { /* ... */ }
+        // --- HELPER FUNCTIONS (DEFINED ONCE, CORRECTLY) ---
+        function logToConsole(message, isError = false) {
+            const timestamp = new Date().toLocaleTimeString();
+            const color = isError ? 'style="color: #ff5555;"' : '';
+            debugConsole.innerHTML += `<div>[${timestamp}] <span ${color}>${message}</span></div>`;
+            debugConsole.scrollTop = debugConsole.scrollHeight;
+            (isError ? console.error : console.log)(message);
+        }
 
+        function addMessageToChat(text, role) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}-message`;
+            messageDiv.textContent = text;
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            return messageDiv;
+        }
+
+        function formatDataForSLM(rawData, analysisData) {
+            let summary = ``;
+            if (rawData?.nom) summary += `Nom de l'étudiant: ${rawData.nom}\n`;
+            ['etape1', 'etape2'].forEach(etape => {
+                if (rawData[etape] && rawData[etape].length > 0) {
+                    summary += `\n--- RÉSULTATS ${etape.toUpperCase()} ---\n`;
+                    rawData[etape].forEach(subject => {
+                        summary += `Sujet: ${subject.name} (${subject.code})\n`;
+                        subject.competencies.forEach(comp => {
+                            comp.assignments.forEach(assign => {
+                                if (assign.result) summary += `- Travail: "${assign.work}", Résultat: ${assign.result}\n`;
+                            });
+                        });
+                    });
+                }
+            });
+            if (analysisData) {
+                summary += `\n\n--- ANALYSE PRÉDICTIVE ---\n`;
+                if(analysisData.globalAverage) summary += `- Moyenne générale (calculée): ${analysisData.globalAverage.toFixed(2)}%\n`;
+                if(analysisData.burnoutRiskScore) summary += `- Score de risque de burnout: ${analysisData.burnoutRiskScore.toFixed(0)}/100\n`;
+                if(analysisData.globalConsistencyScore) summary += `- Indice de consistance: ${analysisData.globalConsistencyScore.toFixed(0)}/100\n`;
+                if(analysisData.predictions?.global?.p50) summary += `- Prédiction de la moyenne finale: ${analysisData.predictions.global.p50.toFixed(2)}%\n`;
+            }
+            return summary;
+        }
+
+        function buildSmartPrompt(userQuestion) {
+            const personalityPrompt = `Tu es un tuteur académique expert, amical et encourageant.`;
+            const baseInstructions = `Règles Strictes:\n1. Analyse le CONTEXTE fourni pour répondre à la QUESTION.\n2. Formule une réponse entièrement nouvelle en français.\n3. Si la réponse n'est pas dans le contexte, réponds "Je n'ai pas cette information."`;
+            const contextSection = studentDataContext ? `\n\nCONTEXTE:\n---\n${studentDataContext}\n---` : `\n\nCONTEXTE:\nAucune donnée étudiante n'a été chargée.`;
+            return `${personalityPrompt}\n${baseInstructions}${contextSection}\n\nQuestion: "${userQuestion}"`;
+        }
+
+        // --- CORE LOGIC ---
         async function handleChatSubmit() {
             const userMessage = chatInput.value.trim();
             if (!userMessage) return;
@@ -66,13 +113,15 @@
             
             const prompt = buildSmartPrompt(userMessage);
             logToConsole("Sending prompt to secure back-end...");
+
+            // Use the reliable FormData method that we know works
+            const formData = new FormData();
+            formData.append('prompt', prompt);
             
             try {
-                // This is the secure call to YOUR back-end.
                 const response = await fetch(SCRIPT_URL, {
                     method: 'POST',
-                    mode: 'cors', // This is essential for cross-domain requests
-                    body: JSON.stringify({ prompt }),
+                    body: formData,
                 });
 
                 if (!response.ok) { throw new Error(`Le serveur a répondu avec une erreur: ${await response.text()}`); }
@@ -113,13 +162,7 @@
             }
         }
         
-        // Full helper functions for completeness
-        function logToConsole(message, isError = false) {const timestamp = new Date().toLocaleTimeString(); const color = isError ? 'style="color: #ff5555;"' : ''; debugConsole.innerHTML += `<div>[${timestamp}] <span ${color}>${message}</span></div>`; debugConsole.scrollTop = debugConsole.scrollHeight; (isError ? console.error : console.log)(message);}
-        function addMessageToChat(text, role) {const messageDiv = document.createElement('div');messageDiv.className = `message ${role}-message`;messageDiv.textContent = text;messagesContainer.appendChild(messageDiv);messagesContainer.scrollTop = messagesContainer.scrollHeight;return messageDiv;}
-        function formatDataForSLM(rawData, analysisData) {let summary = ``;if (rawData?.nom) summary += `Nom de l'étudiant: ${rawData.nom}\n`;['etape1', 'etape2'].forEach(etape => {if (rawData[etape] && rawData[etape].length > 0) {summary += `\n--- RÉSULTATS ${etape.toUpperCase()} ---\n`;rawData[etape].forEach(subject => {summary += `Sujet: ${subject.name} (${subject.code})\n`;subject.competencies.forEach(comp => {comp.assignments.forEach(assign => {if (assign.result) summary += `- Travail: "${assign.work}", Résultat: ${assign.result}\n`;});});});}});if (analysisData) {summary += `\n--- ANALYSE PRÉDICTIVE ---\n`;if(analysisData.globalAverage) summary += `- Moyenne générale (calculée): ${analysisData.globalAverage.toFixed(2)}%\n`;if(analysisData.burnoutRiskScore) summary += `- Score de risque de burnout: ${analysisData.burnoutRiskScore.toFixed(0)}/100\n`;if(analysisData.globalConsistencyScore) summary += `- Indice de consistance: ${analysisData.globalConsistencyScore.toFixed(0)}/100\n`;if(analysisData.predictions?.global?.p50) summary += `- Prédiction de la moyenne finale: ${analysisData.predictions.global.p50.toFixed(2)}%\n`;}return summary;}
-        function buildSmartPrompt(userQuestion) { const personalityPrompt = `Tu es un tuteur académique expert, amical et encourageant.`; const baseInstructions = `Règles Strictes:\n1. Analyse le CONTEXTE fourni pour répondre à la QUESTION.\n2. Formule une réponse entièrement nouvelle en français.\n3. Si la réponse n'est pas dans le contexte, réponds "Je n'ai pas cette information."`; const contextSection = studentDataContext ? `\n\nCONTEXTE:\n---\n${studentDataContext}\n---` : `\n\nCONTEXTE:\nAucune donnée étudiante n'a été chargée.`; return `${personalityPrompt}\n${baseInstructions}${contextSection}\n\nQuestion: "${userQuestion}"`;}
-
-        // Event listeners
+        // --- EVENT LISTENERS ---
         sendBtn.onclick = handleChatSubmit;
         chatInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); handleChatSubmit(); } });
         loadDataBtn.onclick = loadStudentData;
