@@ -148,7 +148,7 @@ function openExpandedView(subject) {
     const detailsWidget = document.createElement('div');
     detailsWidget.className = 'subject-widget';
     detailsWidget.style.cssText = 'display: flex; flex-direction: column;';
-    detailsWidget.innerHTML = `<h3 class="widget-title" style="margin-bottom:20px; flex-shrink: 0;">Détails & Planificateur</h3><div class="details-widget-body" style="flex-grow: 1; min-height: 0;"><div class="competency-widgets"></div><div class="graph-container" style="height: 250px; margin-top: 20px; position: relative;"><canvas id="assignmentsChart"></canvas></div><div class="calculator-container"></div></div><a href="projection.html?subject=${encodeURIComponent(subject.name)}" class="btn-secondary" style="margin-top: 20px; text-align: center; flex-shrink: 0;">Plus d'information</a>`;
+    detailsWidget.innerHTML = `<h3 class="widget-title" style="margin-bottom:20px; flex-shrink: 0;">Détails & Planificateur</h3><div class="details-widget-body" style="flex-grow: 1; min-height: 0;"><div class="competency-widgets"></div><div class="graph-container" style="height: 300px; margin-top: 20px; position: relative;"><canvas id="assignmentsChart"></canvas></div><div class="calculator-container"></div></div><a href="projection.html?subject=${encodeURIComponent(subject.name)}" class="btn-secondary" style="margin-top: 20px; text-align: center; flex-shrink: 0;">Plus d'information</a>`;
     const rankingWidget = document.createElement('div');
     rankingWidget.className = 'subject-widget';
     rankingWidget.innerHTML = `<h3 class="widget-title">Classement de la matière</h3><div id="ranking-content" style="height: calc(100% - 40px); display: flex; flex-direction: column;"></div>`;
@@ -172,7 +172,7 @@ function openExpandedViewForGeneral(subjects, etapeKey, average, history) {
     const detailsWidget = document.createElement('div');
     detailsWidget.className = 'subject-widget';
     detailsWidget.style.cssText = 'display: flex; flex-direction: column;';
-    detailsWidget.innerHTML = `<h3 class="widget-title" style="margin-bottom:20px; flex-shrink: 0;">Détail par Matière</h3><div class="details-widget-body" style="flex-grow: 1; min-height: 0;"><div class="competency-widgets"></div><div class="graph-container" style="height: 250px; margin-top: 20px; position: relative;"><canvas id="assignmentsChart"></canvas></div><div class="calculator-container"><p>Le planificateur est disponible uniquement pour les matières individuelles.</p></div></div><a href="projection.html" class="btn-secondary" style="margin-top: 20px; text-align: center; flex-shrink: 0;">Plus d'information</a>`;
+    detailsWidget.innerHTML = `<h3 class="widget-title" style="margin-bottom:20px; flex-shrink: 0;">Détail par Matière</h3><div class="details-widget-body" style="flex-grow: 1; min-height: 0;"><div class="competency-widgets"></div><div class="graph-container" style="height: 400px; margin-top: 20px; position: relative;"><canvas id="assignmentsChart"></canvas></div><div class="calculator-container"><p>Le planificateur est disponible uniquement pour les matières individuelles.</p></div></div><a href="projection.html" class="btn-secondary" style="margin-top: 20px; text-align: center; flex-shrink: 0;">Plus d'information</a>`;
     const rankingWidget = document.createElement('div');
     rankingWidget.className = 'subject-widget';
     rankingWidget.innerHTML = `<h3 class="widget-title">Classement de la Moyenne</h3><div id="ranking-content" style="height: calc(100% - 40px); display: flex; flex-direction: column;"></div>`;
