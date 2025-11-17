@@ -41,14 +41,15 @@
         .gauge-container { width: 120px; height: 70px; position: relative; }
         .histogram-container { margin-top: 15px; height: 120px; }
         .widget-chart-controls { display: flex; justify-content: flex-end; align-items: center; margin-bottom: 5px; height: 25px; gap: 5px; }
-        .chart-toggle-btn { background: none; border: 1px solid var(--border-color); color: var(--text-secondary-color); padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 0.8em; }
+        .chart-toggle-btn { background: none; border: 1px solid var(--border-color); color: var(--light-grey); padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 0.8em; }
         .chart-toggle-btn:hover { color: var(--primary-color); border-color: var(--primary-color); }
         #expanded-view-overlay { position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.6); backdrop-filter: blur(5px); z-index: 1000; display: flex; justify-content: center; align-items: center; opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s; padding: 20px; box-sizing: border-box; }
         #expanded-view-overlay.active { opacity: 1; visibility: visible; }
         #expanded-view-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; width: 100%; max-width: 1400px; max-height: 95vh; }
         #expanded-view-grid .subject-widget { transform: scale(0.9); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         #expanded-view-overlay.active .subject-widget { transform: scale(1); }
-        #expanded-view-grid .subject-widget, #expanded-view-grid .widget-top-section { cursor: default; }
+        #expanded-view-grid .subject-widget { cursor: default; }
+        #expanded-view-grid .widget-top-section { cursor: default; }
         #expanded-view-grid .subject-widget:hover { transform: translateY(0); box-shadow: var(--shadow-widget); }
         .details-widget-body { height: calc(95vh - 120px); overflow-y: auto; padding-right: 10px; }
         .competency-widgets { display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap; }
@@ -93,79 +94,79 @@
     </div>
 
     <main id="widget-grid" class="widget-grid">
-        <!-- Widgets will be populated by js/improve-functions.js -->
+        <!-- Widgets populated by JS -->
     </main>
     
     <div id="expanded-view-overlay">
         <div id="expanded-view-grid">
-            <!-- Expanded view widgets will be populated by js/improve-functions.js -->
+            <!-- Expanded view widgets populated by JS -->
         </div>
     </div>
 
-    <!-- =============================================================================== -->
-    <!-- ======================= START: AI CHATBOT (GEMINI) ============================ -->
-    <!-- =============================================================================== -->
+    <!-- ============================================= -->
+    <!-- ============ CHATBOT HTML/CSS =============== -->
+    <!-- ============================================= -->
     <style>
         :root {
             --mbs-bg-color: #1a1a1a; --mbs-surface-color: #2c2c2c; --mbs-primary-color: #61afef; --mbs-text-color: #f0f0f0; --mbs-text-secondary-color: #a0a0a0; --mbs-border-color: #444444; --mbs-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
         #mbs-chatbot-container *, #mbs-chatbot-container *::before, #mbs-chatbot-container *::after { box-sizing: border-box; margin: 0; padding: 0; }
         #mbs-chatbot-container { position: fixed; bottom: 20px; right: 20px; z-index: 10000; font-family: var(--mbs-font-family); }
-        #mbs-chatbot-toggle { position: relative; z-index: 10000; background-color: var(--mbs-primary-color); color: white; border: none; border-radius: 50%; width: 60px; height: 60px; font-size: 28px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), background-color 0.2s ease; }
+        #mbs-chatbot-toggle {
+            position: relative; z-index: 10000; background-color: var(--mbs-primary-color); color: white; border: none; border-radius: 50%; width: 60px; height: 60px; font-size: 28px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), background-color 0.2s ease;
+        }
         #mbs-chatbot-container.expanded #mbs-chatbot-toggle { transform: translateX(calc(-1 * clamp(400px, 50vw, 800px))); }
         #mbs-chatbot-toggle.loading { background-color: #444; cursor: wait; animation: mbs-pulse 1.5s infinite; }
         #mbs-chatbot-toggle:not(.loading):hover { background-color: #7aaee4; transform: scale(1.1); }
         #mbs-chatbot-toggle .chat-icon, #mbs-chatbot-toggle .close-icon, #mbs-chatbot-toggle .loading-icon { display: none; }
         #mbs-chatbot-toggle:not(.loading) .chat-icon { display: block; }
         #mbs-chatbot-container.expanded #mbs-chatbot-toggle .chat-icon { display: none; }
-        #mbs-chatbot-container.expanded #mbs-chatbot-toggle .close-icon { display: block; }
+        #mbs-chatbot-container.expanded #mmbs-chatbot-toggle .close-icon { display: block; }
         #mbs-chatbot-toggle.loading .loading-icon { display: block; animation: mbs-spin 1.5s linear infinite; }
         @keyframes mbs-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         @keyframes mbs-pulse { 0% { box-shadow: 0 0 0 0 rgba(97, 175, 239, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(97, 175, 239, 0); } 100% { box-shadow: 0 0 0 0 rgba(97, 175, 239, 0); } }
-        #mbs-chatbot-window { position: fixed; top: 0; right: 0; bottom: 0; width: clamp(400px, 50vw, 800px); height: 100%; background-color: var(--mbs-bg-color); border-left: 1px solid var(--mbs-border-color); box-shadow: -5px 0 20px rgba(0, 0, 0, 0.3); display: flex; flex-direction: column; transform: translateX(100%); pointer-events: none; transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); z-index: 9999; }
+        #mbs-chatbot-window {
+            position: fixed; top: 0; right: 0; bottom: 0; width: clamp(400px, 50vw, 800px); height: 100%; background-color: var(--mbs-bg-color); border-left: 1px solid var(--mbs-border-color); box-shadow: -5px 0 20px rgba(0, 0, 0, 0.3); display: flex; flex-direction: column; transform: translateX(100%); pointer-events: none; transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); z-index: 9999;
+        }
         #mbs-chatbot-container.expanded #mbs-chatbot-window { transform: translateX(0); pointer-events: auto; }
         .mbs-chat-header { padding: 16px; background-color: var(--mbs-surface-color); border-bottom: 1px solid var(--mbs-border-color); text-align: center; flex-shrink: 0; }
         .mbs-chat-header h3 { color: var(--mbs-text-color); font-size: 1.25rem; margin: 0; }
         #mbs-chat-messages { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
-        #mbs-chat-messages a { color: #61afef; text-decoration: underline; }
+        #mbs-chat-messages a { color: var(--mbs-primary-color); text-decoration: underline; }
         #mbs-chat-messages::-webkit-scrollbar { width: 6px; }
         #mbs-chat-messages::-webkit-scrollbar-track { background: transparent; }
         #mbs-chat-messages::-webkit-scrollbar-thumb { background: #555; border-radius: 3px; }
-        .mbs-chat-message { max-width: 90%; padding: 15px 20px; border-radius: 12px; line-height: 1.6; font-size: 1rem; overflow-wrap: break-word; }
+        .mbs-chat-message { max-width: 90%; padding: 12px 18px; border-radius: 12px; line-height: 1.6; font-size: 1rem; overflow-wrap: break-word; }
         .mbs-chat-message.user { background-color: var(--mbs-primary-color); color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
         .mbs-chat-message.ai { background-color: var(--mbs-surface-color); color: var(--mbs-text-color); align-self: flex-start; border-bottom-left-radius: 4px; }
         .mbs-chat-message.ai * { margin: 0; color: inherit; }
         .mbs-chat-message.ai > *:not(:last-child) { margin-bottom: 0.8em; }
         .mbs-chat-message.ai ul, .mbs-chat-message.ai ol { padding-left: 25px; }
         .mbs-chat-message.ai li { margin-bottom: 4px; }
-        .mbs-chat-message.ai a { font-weight: 600; }
-        .mbs-chat-message.ai strong, .mbs-chat-message.ai b { color: #c8a2c8; font-weight: 600; }
+        .mbs-chat-message.ai strong, .mbs-chat-message.ai b { color: #e5c0ff; font-weight: 600; }
         .mbs-typing-indicator { align-self: flex-start; display: flex; align-items: center; gap: 5px; padding: 14px 20px; background-color: var(--mbs-surface-color); border-radius: 12px; border-bottom-left-radius: 4px; }
         .mbs-typing-indicator span { width: 8px; height: 8px; background-color: var(--mbs-text-secondary-color); border-radius: 50%; animation: mbs-typing-bounce 1.4s infinite ease-in-out both; }
-        .mbs-typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
-        .mbs-typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+        .mbs-typing-indicator span:nth-child(1) { animation-delay: -0.32s; } .mbs-typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
         @keyframes mbs-typing-bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
         #mbs-chat-form { display: flex; padding: 16px; border-top: 1px solid var(--mbs-border-color); background-color: var(--mbs-surface-color); flex-shrink: 0; }
-        #mbs-chat-form:has(input:disabled) #mbs-chat-input { background-color: #383838; cursor: not-allowed; }
-        #mbs-chat-form:has(input:disabled) #mbs-chat-send { background-color: #555; cursor: not-allowed; }
         #mbs-chat-input { flex-grow: 1; background-color: var(--mbs-bg-color); border: 1px solid var(--mbs-border-color); border-radius: 20px; padding: 12px 18px; color: var(--mbs-text-color); font-size: 1rem; margin-right: 10px; outline: none; transition: border-color 0.2s ease; }
         #mbs-chat-input:focus { border-color: var(--mbs-primary-color); }
         #mbs-chat-input::placeholder { color: var(--mbs-text-secondary-color); }
         #mbs-chat-send { background-color: var(--mbs-primary-color); border: none; color: white; width: 44px; height: 44px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; transition: background-color 0.2s ease; }
+        #mbs-chat-form:has(input:disabled) #mbs-chat-input { background-color: #383838; cursor: not-allowed; }
+        #mbs-chat-form:has(input:disabled) #mbs-chat-send { opacity: 0.6; cursor: not-allowed; }
         #mbs-chat-send:not([disabled]):hover { background-color: #7aaee4; }
         @media (max-width: 500px) { #mbs-chatbot-window { width: 100vw; } #mbs-chatbot-container { bottom: 10px; right: 10px; } }
     </style>
-
+    
     <div id="mbs-chatbot-container">
         <div id="mbs-chatbot-window">
             <div class="mbs-chat-header">
                 <h3>Assistant MBS</h3>
             </div>
-            <div id="mbs-chat-messages">
-                <!-- Messages will be dynamically inserted here -->
-            </div>
+            <div id="mbs-chat-messages"></div>
             <form id="mbs-chat-form">
-                <input type="text" id="mbs-chat-input" placeholder="Chargement de l'assistant..." autocomplete="off" disabled>
+                <input type="text" id="mbs-chat-input" placeholder="Chargement..." autocomplete="off" disabled>
                 <button type="submit" id="mbs-chat-send" aria-label="Envoyer" disabled>
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(45deg); margin-left: -2px;"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
                 </button>
@@ -178,43 +179,225 @@
         </button>
     </div>
 
+    <footer><p>Outil MBS - Moyenne, Bilan, Stratégie</p></footer>
+
+    <!-- MARKED.JS for Markdown rendering -->
     <script src="https://cdn.jsdelivr.net/npm/marked@12.0.0/marked.min.js"></script>
+
+    <!-- ============================================= -->
+    <!-- =========== MAIN PAGE JAVASCRIPT ============ -->
+    <!-- ============================================= -->
+    <script>
+    // This script replaces the need for 'js/improve-functions.js'
+    document.addEventListener('DOMContentLoaded', initializeOrRefreshPage);
+    
+    // FIX 1: Add 'pageshow' event listener to refresh data when navigating back to the page
+    window.addEventListener('pageshow', function(event) {
+        // The 'persisted' property is true if the page is from the back/forward cache
+        if (event.persisted) {
+            console.log("Page loaded from cache. Refreshing data.");
+            initializeOrRefreshPage();
+        }
+    });
+
+    /**
+     * Main function to load data from localStorage and render all UI components.
+     * This function is now called on initial load and on page show.
+     */
+    function initializeOrRefreshPage() {
+        console.log("Initializing or refreshing page UI...");
+        const mbsData = JSON.parse(localStorage.getItem('mbsData'));
+
+        if (!mbsData || !mbsData.subjects) {
+            document.getElementById('widget-grid').innerHTML = "<p>Aucune donnée de matière trouvée. Veuillez synchroniser vos données.</p>";
+            return;
+        }
+
+        // Setup theme toggle (example of a function that runs once)
+        setupTheme();
+        
+        // Populate widgets with fresh data
+        populateAllWidgets(mbsData);
+
+        // Setup other event listeners
+        setupTabListeners(mbsData);
+    }
+    
+    function setupTheme() {
+        const themeToggle = document.getElementById('theme-toggle');
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            if (currentTheme === 'dark') {
+                document.documentElement.removeAttribute('data-theme');
+                themeToggle.innerHTML = '<i class="fa-solid fa-moon"></i>';
+            } else {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                themeToggle.innerHTML = '<i class="fa-solid fa-sun"></i>';
+            }
+        });
+    }
+
+    function populateAllWidgets(mbsData) {
+        const widgetGrid = document.getElementById('widget-grid');
+        widgetGrid.innerHTML = ''; // Clear existing widgets before repopulating
+        
+        mbsData.subjects.forEach(subject => {
+            const widget = createSubjectWidget(subject);
+            widgetGrid.appendChild(widget);
+        });
+
+        // Any other UI update functions should be called here
+        // For example: updateOverallAverageDisplay(mbsData.overallAverage);
+    }
+
+    function createSubjectWidget(subject) {
+        // This is a simplified example. You should expand this to match your original widget creation logic.
+        const subjectWidget = document.createElement('div');
+        subjectWidget.className = 'subject-widget';
+        
+        // Use the average from the data object, not recalculated
+        const generalAverage = subject.averages.generale || 'N/A';
+
+        subjectWidget.innerHTML = `
+            <div class="widget-top-section">
+                <div class="widget-info">
+                    <h3 class="widget-title">${subject.name}</h3>
+                    <p class="widget-average">${generalAverage}%</p>
+                </div>
+            </div>
+            <div class="histogram-container">
+                <canvas id="chart-${subject.id}"></canvas>
+            </div>
+             <!-- FIX 4: Leaderboard container -->
+            <div class="mini-leaderboard-container">
+                <h4>Classement (Exemple)</h4>
+                <ul class="leaderboard-list" id="leaderboard-${subject.id}"></ul>
+            </div>
+        `;
+
+        // After creating the widget, render the chart and leaderboard
+        setTimeout(() => {
+            renderWidgetChart(subject);
+            // FIX 4: Call the corrected leaderboard rendering function
+            renderLeaderboard(subject);
+        }, 0);
+
+        return subjectWidget;
+    }
+    
+    function renderWidgetChart(subject) {
+        const ctx = document.getElementById(`chart-${subject.id}`).getContext('2d');
+        const grades = subject.assignments.map(a => a.grade).filter(g => g !== null);
+        
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: grades.map((_, i) => `Eval ${i + 1}`),
+                datasets: [{
+                    label: 'Résultats',
+                    data: grades,
+                    borderColor: 'rgba(52, 152, 219, 0.8)',
+                    backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { 
+                    y: { beginAtZero: false, max: 100 },
+                    x: { display: false }
+                }
+            }
+        });
+    }
+    
+    /**
+     * FIX 4: Corrected function to render the leaderboard.
+     * This function uses the pre-calculated averages from the 'subject.averages' object,
+     * preventing incorrect local calculations.
+     * @param {object} subject - The subject data object from localStorage.
+     */
+    function renderLeaderboard(subject) {
+        const container = document.getElementById(`leaderboard-${subject.id}`);
+        if (!container) return;
+        
+        container.innerHTML = ''; // Clear previous entries
+
+        // Example leaderboard data structure. You should fetch this from your data source.
+        const leaderboardData = [
+            { name: "John D.", grade: subject.averages.generale + 2 }, // Mock data
+            { name: "Vous", grade: subject.averages.generale },
+            { name: "Jane S.", grade: subject.averages.generale - 3 },
+        ].sort((a, b) => b.grade - a.grade); // Sort by grade
+
+        leaderboardData.forEach((entry, index) => {
+            const item = document.createElement('li');
+            item.className = 'leaderboard-item';
+            if (entry.name === "Vous") {
+                item.classList.add('is-user');
+            }
+            item.innerHTML = `
+                <span class="item-rank">${index + 1}.</span>
+                <span class="item-name">${entry.name}</span>
+                <span class="item-grade">${entry.grade.toFixed(1)}%</span>
+            `;
+            container.appendChild(item);
+        });
+    }
+
+    function setupTabListeners(mbsData) {
+        // Implement tab switching logic here if needed
+    }
+
+    </script>
+    
+    <!-- ============================================= -->
+    <!-- ========= GEMINI CHATBOT JAVASCRIPT ========= -->
+    <!-- ============================================= -->
     <script>
     (function() {
-        const appScriptUrl = "https://script.google.com/macros/s/AKfycbwSKlEFJU94tw8B0Vq1VB4dI-4fgD1whUl4IoFkkelrODBjPdIGh3jTOYgIMR-cu5WIcg/exec";
-        const GEMINI_MODEL = "gemini-1.5-flash-latest";
-        
-        let geminiApiKey = '';
+        // --- Configuration ---
+        const appScriptUrl = "https://script.google.com/macros/s/AKfycbwSKlEFJU94tw8B0Vq1VB4dI-4fgD1whUl4IoFkkelrODBjPdIGh3jTOYgIMR-cu5WIcg/exec"; 
+        const GEMINI_MODEL = "gemini-1.5-flash-latest"; // Using a recommended modern model
+        let geminiApiKey = ''; 
         let isFetching = false;
-        let chatHistory = []; 
-
-        const SYSTEM_PROMPT = `You are Assistant MBS, a specialized AI helper for students in the Quebec (Canada) educational system. Your primary goal is to help them understand their academic performance, identify areas for improvement, and suggest concrete strategies and resources.
-
-        **Core Instructions:**
-        1.  **Language:** Communicate in French by default. Switch to English only if the user writes to you in English.
-        2.  **Persona:** Be encouraging, clear, and concise. Act as a knowledgeable guidance counselor.
-        3.  **Data-Driven:** Base all your academic analysis STRICTLY on the JSON data provided in the context. Do not invent grades or subjects.
-        4.  **Formatting is CRITICAL:**
-            *   Use Markdown for clarity: **bold text** for emphasis, bullet points (`*`) for lists, and new paragraphs (double line breaks) to separate ideas.
-            *   AVOID long, dense blocks of text. Keep your answers well-structured and easy to read.
-        5.  **Provide Actionable Resources:** When a user asks for help or how to improve, you MUST suggest relevant and clickable resources. Format links correctly using Markdown: \`[Link Text](URL)\`.
-            *   For general homework help, suggest: \`[Alloprof](https://www.alloprof.qc.ca)\`
-            *   For managing assignments, suggest: \`[Google Classroom](https://classroom.google.com/)\`
-            *   For specific subjects, you can suggest relevant sections of Alloprof (e.g., \`[Alloprof Mathématiques](https://www.alloprof.qc.ca/fr/eleves/bv/mathematiques)\`).
-        6.  **Context:** The user's full academic data is provided with every message. Use this data to answer questions about grades, averages, and projections. Acknowledge that you are looking at their data. For simple greetings, provide a simple, friendly response.`;
-
-        const dom = {
-            container: document.getElementById('mbs-chatbot-container'),
-            toggleButton: document.getElementById('mbs-chatbot-toggle'),
-            messagesContainer: document.getElementById('mbs-chat-messages'),
-            chatForm: document.getElementById('mbs-chat-form'),
-            chatInput: document.getElementById('mbs-chat-input'),
-            chatSend: document.getElementById('mbs-chat-send')
-        };
         
+        // --- FIX 5: CONTEXT MEMORY ---
+        let conversationHistory = [];
+
+        // --- FIX 2: IMPROVED SYSTEM PROMPT ---
+        const SYSTEM_PROMPT = `Tu es l'Assistant MBS, un expert du système éducatif québécois. Ton rôle est d'aider les élèves à analyser leurs notes, à faire des projections et à identifier des stratégies pour s'améliorer.
+        
+        **Instructions Clés:**
+        1.  **Langue:** Communique en français (par défaut) ou en anglais, selon la langue de l'utilisateur.
+        2.  **Clarté et Concision:** Sois direct et facile à comprendre. Utilise des listes à puces (*), du texte en gras (**mot**) et des paragraphes pour structurer tes réponses. Évite les longs blocs de texte.
+        3.  **Analyse Basée sur les Données:** Base TOUTES tes analyses sur les données JSON de l'élève fournies dans le contexte.
+        4.  **Liens Utiles:** Quand c'est pertinent, fournis des liens cliquables formatés en Markdown. Par exemple:
+            *   Pour de l'aide générale: [Alloprof](https://www.alloprof.qc.ca/)
+            *   Pour les devoirs: [Google Classroom](https://classroom.google.com/)
+        5.  **Ton
+        
+        **Comportement:** Sois encourageant, positif et proactif. Si un élève a des difficultés, propose des stratégies concrètes.`;
+
+        // --- DOM Elements ---
+        const container = document.getElementById('mbs-chatbot-container');
+        const toggleButton = document.getElementById('mbs-chatbot-toggle');
+        const messagesContainer = document.getElementById('mbs-chat-messages');
+        const chatForm = document.getElementById('mbs-chat-form');
+        const chatInput = document.getElementById('mbs-chat-input');
+        const chatSend = document.getElementById('mbs-chat-send');
+        
+        // --- Initialization ---
         function init() {
-            marked.setOptions({ breaks: true }); // FIX: Convert single newlines to <br> for better spacing
-            setChatState('loading');
+            // FIX 3: Configure marked.js to treat single newlines as <br> for better readability
+            marked.setOptions({
+                breaks: true
+            });
+            
+            setChatState('loading'); 
             fetchApiKey();
             setupEventListeners();
         }
@@ -223,17 +406,17 @@
             isFetching = (state === 'fetching');
             const isReady = (state === 'ready' || state === 'idle');
             
-            dom.toggleButton.classList.toggle('loading', state === 'loading');
-            dom.chatInput.disabled = !isReady;
-            dom.chatSend.disabled = !isReady;
+            toggleButton.classList.toggle('loading', state === 'loading');
+            chatInput.disabled = !isReady;
+            chatSend.disabled = !isReady;
 
             if (state === 'ready') {
-                dom.chatInput.placeholder = "Posez votre question...";
-                displayMessage("Bonjour ! Je suis l'assistant MBS. Comment puis-je vous aider avec vos résultats scolaires aujourd'hui ?", 'ai');
+                chatInput.placeholder = "Posez votre question...";
+                displayMessage("Bonjour! Je suis l'assistant MBS. Comment puis-je vous aider aujourd'hui?", 'ai');
             } else if (state === 'loading') {
-                dom.chatInput.placeholder = "Chargement de l'assistant...";
+                chatInput.placeholder = "Chargement de l'assistant...";
             } else if (state === 'idle') {
-                dom.chatInput.focus();
+                chatInput.focus();
             }
         }
         
@@ -245,93 +428,102 @@
                         geminiApiKey = data.data.firstBox.trim();
                         setChatState('ready');
                     } else {
-                        throw new Error("Impossible de récupérer la clé API.");
+                        throw new Error("Clé API non valide reçue.");
                     }
                 })
                 .catch(error => {
-                    displayMessage(`**Erreur de chargement:** ${error.message}`, 'ai');
-                    console.error("MBS Chatbot: API Key fetch error:", error);
+                    console.error("MBS Chatbot Error:", error);
+                    displayMessage(`**Erreur de chargement:** Impossible de contacter le serveur pour la clé API. Veuillez réessayer plus tard.`, 'ai');
                 });
         }
 
         function setupEventListeners() {
-            dom.toggleButton.addEventListener('click', () => {
-                if (!dom.toggleButton.classList.contains('loading')) {
-                     dom.container.classList.toggle('expanded');
-                     if(dom.container.classList.contains('expanded')) {
-                        dom.chatInput.focus();
+            toggleButton.addEventListener('click', () => {
+                if (!toggleButton.classList.contains('loading')) {
+                     container.classList.toggle('expanded');
+                     if (container.classList.contains('expanded')) {
+                        chatInput.focus();
                      }
                 }
             });
-            dom.chatForm.addEventListener('submit', e => {
+            chatForm.addEventListener('submit', (e) => {
                 e.preventDefault();
-                const userMessage = dom.chatInput.value.trim();
+                const userMessage = chatInput.value.trim();
                 if (userMessage && !isFetching) {
                     displayMessage(userMessage, 'user');
-                    dom.chatInput.value = '';
+                    chatInput.value = '';
                     processUserMessage(userMessage);
                 }
             });
         }
 
+        // --- DOM Manipulation ---
         function displayMessage(message, sender) {
             const messageDiv = document.createElement('div');
             messageDiv.className = `mbs-chat-message ${sender}`;
-            messageDiv.innerHTML = (sender === 'ai') ? marked.parse(message) : message;
-            dom.messagesContainer.appendChild(messageDiv);
+            
+            // Render Markdown for AI messages, otherwise just text
+            if (sender === 'ai') {
+                messageDiv.innerHTML = marked.parse(message);
+            } else {
+                messageDiv.textContent = message;
+            }
+            
+            messagesContainer.appendChild(messageDiv);
             scrollToBottom();
             return messageDiv;
         }
 
         function showTypingIndicator() {
-            if (dom.messagesContainer.querySelector('.mbs-typing-indicator')) return;
-            const indicator = document.createElement('div');
-            indicator.className = 'mbs-typing-indicator';
-            indicator.innerHTML = '<span></span><span></span><span></span>';
-            dom.messagesContainer.appendChild(indicator);
+            const indicatorDiv = document.createElement('div');
+            indicatorDiv.className = 'mbs-typing-indicator';
+            indicatorDiv.innerHTML = '<span></span><span></span><span></span>';
+            messagesContainer.appendChild(indicatorDiv);
             scrollToBottom();
         }
 
         function removeTypingIndicator() {
-            const indicator = dom.messagesContainer.querySelector('.mbs-typing-indicator');
+            const indicator = messagesContainer.querySelector('.mbs-typing-indicator');
             if (indicator) indicator.remove();
         }
 
         function scrollToBottom() {
-            dom.messagesContainer.scrollTop = dom.messagesContainer.scrollHeight;
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
 
-        function getStudentDataContext() {
-            const safeParse = key => {
-                try { return JSON.parse(localStorage.getItem(key) || '{}'); } 
-                catch (e) { return { error: `Invalid JSON in localStorage for key: ${key}` }; }
-            };
-            return { mbsData: safeParse('mbsData'), mbsProjectionCache: safeParse('mbsProjectionCache') };
+        function getStudentDataForContext() {
+            try {
+                const mbsData = localStorage.getItem('mbsData');
+                const mbsProjection = localStorage.getItem('mbsProjectionCache');
+                return { 
+                    studentGrades: mbsData ? JSON.parse(mbsData) : { error: "Données de notes non trouvées." }, 
+                    studentProjections: mbsProjection ? JSON.parse(mbsProjection) : { error: "Données de projection non trouvées." }
+                };
+            } catch (e) {
+                return { error: `Erreur lors de la lecture des données locales: ${e.message}` };
+            }
         }
 
+        // --- Core Gemini API Logic ---
         async function processUserMessage(userMessage) {
-            if (!geminiApiKey) return;
+            if (!geminiApiKey) {
+                displayMessage("Désolé, la connexion à l'assistant n'est pas établie.", 'ai');
+                return;
+            }
             
             setChatState('fetching');
             showTypingIndicator();
             
-            // Add user message to history
-            chatHistory.push({ role: 'user', parts: [{ text: userMessage }] });
+            const studentDataContext = JSON.stringify(getStudentDataForContext());
+            const fullUserMessage = `Voici ma question: "${userMessage}".\n\nVoici mes données actuelles pour le contexte: ${studentDataContext}`;
 
-            const dataContext = JSON.stringify(getStudentDataContext());
-            const fullPrompt = `[DEBUT DES DONNÉES ÉTUDIANTES]\n${dataContext}\n[FIN DES DONNÉES ÉTUDIANTES]`;
-            
-            // Create the payload with history and system prompt
-            const contents = [
-                // The system prompt now goes in a special 'system' instruction block for better model adherence
-                ...chatHistory
-            ];
-            
-            const payload = { 
-                contents,
-                systemInstruction: {
-                    role: "system",
-                    parts: [{ text: `${SYSTEM_PROMPT}\n\n${fullPrompt}` }]
+            // FIX 5: Add user message to conversation history
+            conversationHistory.push({ role: 'user', parts: [{ text: fullUserMessage }] });
+
+            const payload = {
+                contents: conversationHistory,
+                systemInstruction: { // Pass the system prompt separately for better model guidance
+                    parts: [{ text: SYSTEM_PROMPT }]
                 }
             };
 
@@ -342,40 +534,34 @@
                     body: JSON.stringify(payload)
                 });
                 
-                removeTypingIndicator();
                 if (!response.ok) {
                     const errorData = await response.json();
-                    throw new Error(errorData.error?.message || `HTTP Error: ${response.status}`);
+                    throw new Error(errorData.error?.message || `Erreur HTTP: ${response.status}`);
                 }
 
-                const responseData = await response.json();
-                const aiResponseText = responseData.candidates[0]?.content?.parts[0]?.text || "Désolé, je n'ai pas pu générer de réponse.";
+                const data = await response.json();
+                const aiResponseText = data.candidates[0].content.parts[0].text;
                 
-                // Add AI response to history
-                chatHistory.push({ role: 'model', parts: [{ text: aiResponseText }] });
+                // FIX 5: Add AI response to conversation history
+                conversationHistory.push({ role: 'model', parts: [{ text: aiResponseText }] });
+
+                removeTypingIndicator();
                 displayMessage(aiResponseText, 'ai');
 
             } catch (error) {
                 removeTypingIndicator();
-                displayMessage(`**Erreur Critique :** ${error.message}`, 'ai');
-                console.error("MBS Chatbot: Fatal Error:", error);
-                // Remove the last user message from history if the call fails
-                chatHistory.pop();
+                displayMessage(`**Désolé, une erreur est survenue:** ${error.message}. Veuillez réessayer.`, 'ai');
+                console.error("MBS Chatbot: API Error:", error);
+                // Remove the last user message from history if the call failed
+                conversationHistory.pop(); 
             } finally {
                 setChatState('idle');
             }
         }
-        
+
+        // --- Run the chatbot ---
         init();
     })();
     </script>
-    <!-- =============================================================================== -->
-    <!-- ======================== END: AI CHATBOT (GEMINI) ============================= -->
-    <!-- =============================================================================== -->
-
-    <footer><p>Outil MBS - Moyenne, Bilan, Stratégie</p></footer>
-
-    <!-- This new JS file contains all the logic for the widgets, charts, and data calculations -->
-    <script src="js/improve-functions.js"></script>
 </body>
 </html>
