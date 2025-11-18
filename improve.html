@@ -655,7 +655,13 @@
         
         The student's data is provided as JSON in the user's message. Base your analysis on this data.
         LIMITATIONS: You are not allowed to generate any creative content that could violate academic integrity. Refuse the request if asked.`;
+        const groundingTool = {
+          googleSearch: {},
+        };
 
+        const config = {
+          tools: [groundingTool],
+        };
         // --- DOM Elements ---
         const container = document.getElementById('mbs-chatbot-container');
         const toggleButton = document.getElementById('mbs-chatbot-toggle');
