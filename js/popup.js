@@ -115,12 +115,8 @@ document.addEventListener('DOMContentLoaded', function() {
             label.htmlFor = id;
             label.innerHTML = htmlContent;
             
-            // Style for links within labels
             label.querySelectorAll('a').forEach(link => {
-                Object.assign(link.style, {
-                    color: '#7289da', // Branded blue/purple color
-                    textDecoration: 'none'
-                });
+                Object.assign(link.style, { color: '#7289da', textDecoration: 'none' });
                 link.onmouseover = () => link.style.textDecoration = 'underline';
                 link.onmouseout = () => link.style.textDecoration = 'none';
             });
@@ -154,48 +150,6 @@ document.addEventListener('DOMContentLoaded', function() {
             transition: 'background-color 0.3s ease, opacity 0.3s ease'
         });
 
-        const updateButtonState = () => {
-            if (termsCheckbox.checked && privacyCheckbox.checked) {
-                acceptButton.disabled = false;
-                acceptButton.style.opacity = '1';
-                acceptButton.style.cursor = 'pointer';
-            } else {
-                acceptButton.disabled = true;
-                acceptButton.style.opacity = '0.5';
-                acceptButton.style.cursor = 'not-allowed';
-            }
-        };
-
-        termsCheckbox.addEventListener('change', updateButtonState);
-        privacyCheckbox.addEventListener('change', updateButtonState);
-
-        acceptButton.addEventListener('mouseover', () => {
-            if (!acceptButton.disabled) acceptButton.style.backgroundColor = '#677bc4';
-        });
-        acceptButton.addEventListener('mouseout', () => {
-            if (!acceptButton.disabled) acceptButton.style.backgroundColor = '#7289da';
-        });
-
-        acceptButton.addEventListener('click', () => {
-            if (acceptButton.disabled) return;
-            localStorage.setItem('mbs_accept', JSON.stringify({ terms: true, privacy: true }));
-            document.body.removeChild(widgetContainer);
-        });
-
-        // --- FAQ Link ---
-        const faqLink = document.createElement('a');
-        faqLink.href = '#';
-        faqLink.textContent = 'Consulter la FAQ';
-        Object.assign(faqLink.style, {
-            display: 'block',
-            marginTop: '20px',
-            color: '#b9bbbe',
-            textDecoration: 'none',
-            fontSize: '0.9em'
-        });
-        faqLink.onmouseover = () => faqLink.style.textDecoration = 'underline';
-        faqLink.onmouseout = () => faqLink.style.textDecoration = 'none';
-
         // --- Iframe Popup for FAQ ---
         const faqIframeContainer = document.createElement('div');
         Object.assign(faqIframeContainer.style, {
@@ -221,24 +175,64 @@ document.addEventListener('DOMContentLoaded', function() {
             width: '100%', height: '100%', border: 'none'
         });
 
+        // --- **NEW** Red Close Button for FAQ ---
         const closeIframeButton = document.createElement('button');
-        closeIframeButton.textContent = '×'; // A nice 'X' for closing
+        closeIframeButton.textContent = 'Fermer';
         Object.assign(closeIframeButton.style, {
-            position: 'absolute', top: '10px', right: '15px',
-            background: 'transparent', border: 'none',
-            color: 'white', fontSize: '2.5em', cursor: 'pointer',
-            lineHeight: '1'
+            position: 'absolute',
+            bottom: '20px',
+            right: '20px',
+            padding: '10px 20px',
+            backgroundColor: '#f04747', // Red color
+            color: 'white',
+            border: 'none',
+            borderRadius: '5px',
+            fontSize: '1em',
+            fontWeight: 'bold',
+            cursor: 'pointer',
+            transition: 'background-color 0.2s ease-in-out'
         });
+        closeIframeButton.onmouseover = () => closeIframeButton.style.backgroundColor = '#d84040';
+        closeIframeButton.onmouseout = () => closeIframeButton.style.backgroundColor = '#f04747';
         
         iframeContentWrapper.appendChild(faqIframe);
         iframeContentWrapper.appendChild(closeIframeButton);
         faqIframeContainer.appendChild(iframeContentWrapper);
 
-        faqLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            faqIframeContainer.style.display = 'flex';
+        // --- **UPDATED** Logic for Checkboxes and Button ---
+        let faqHasBeenShown = false;
+
+        const checkAndTriggerFAQ = () => {
+            if (termsCheckbox.checked && privacyCheckbox.checked && !faqHasBeenShown) {
+                faqIframeContainer.style.display = 'flex';
+                faqHasBeenShown = true;
+            }
+        };
+
+        termsCheckbox.addEventListener('change', checkAndTriggerFAQ);
+        privacyCheckbox.addEventListener('change', checkAndTriggerFAQ);
+        
+        // **UPDATED** Close button now enables the accept button
+        closeIframeButton.addEventListener('click', () => {
+            faqIframeContainer.style.display = 'none';
+            // Enable the accept button only after the FAQ is closed
+            acceptButton.disabled = false;
+            acceptButton.style.opacity = '1';
+            acceptButton.style.cursor = 'pointer';
         });
-        closeIframeButton.addEventListener('click', () => faqIframeContainer.style.display = 'none');
+
+        acceptButton.addEventListener('mouseover', () => {
+            if (!acceptButton.disabled) acceptButton.style.backgroundColor = '#677bc4';
+        });
+        acceptButton.addEventListener('mouseout', () => {
+            if (!acceptButton.disabled) acceptButton.style.backgroundColor = '#7289da';
+        });
+
+        acceptButton.addEventListener('click', () => {
+            if (acceptButton.disabled) return;
+            localStorage.setItem('mbs_accept', JSON.stringify({ terms: true, privacy: true }));
+            document.body.removeChild(widgetContainer);
+        });
         
         // --- Assemble The Widget ---
         widgetContent.appendChild(title);
@@ -246,9 +240,8 @@ document.addEventListener('DOMContentLoaded', function() {
         widgetContent.appendChild(noDataCollectionMessage);
         widgetContent.appendChild(termsContainer);
         widgetContent.appendChild(acceptButton);
-        widgetContent.appendChild(faqLink);
         widgetContainer.appendChild(widgetContent);
-        widgetContainer.appendChild(faqIframeContainer);
+        widgetContainer.appendChild(faqIframeContainer); // Add iframe container to main widget
         document.body.appendChild(widgetContainer);
     };
 
