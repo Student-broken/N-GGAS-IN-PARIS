@@ -1,1 +1,1 @@
-# bruh what did u do the websites broken 
+# added gatekeep block (self contained) to Main, Ranking, Improve, Index. None added to projection since its useless anyways without main. 
