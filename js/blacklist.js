@@ -60,7 +60,7 @@
         
         const caption = document.createElement('div');
         caption.id = 'brainrot-caption';
-        caption.innerText = "Nuh uh";
+        caption.innerText = "Permanently Blacklisted";
 
         document.body.appendChild(img);
         document.body.appendChild(caption);
